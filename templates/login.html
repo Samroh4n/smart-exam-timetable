@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Sign in - Smart Exam Timetable{% endblock %}
+{% block content %}
+{% if error_page %}
+<section class="panel narrow">
+  <h1>Something went wrong</h1>
+  <p class="error-text">{{ error_page }}</p>
+  <p><a class="btn" href="{{ url_for('index') }}">Back to my home page</a></p>
+</section>
+{% else %}
+<section class="panel narrow">
+  <h1>Sign in</h1>
+  <p class="muted">Administrators build timetables. Students see their own exams.</p>
+  {% if error %}<div class="flash flash-error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" class="stack" autocomplete="on">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Username
+      <input name="username" required autofocus autocomplete="username">
+    </label>
+    <label>Password
+      <input name="password" type="password" required autocomplete="current-password">
+    </label>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+  <p class="muted small">After signing in, administrators land on the dashboard and students on their personal timetable.</p>
+</section>
+{% endif %}
+{% endblock %}

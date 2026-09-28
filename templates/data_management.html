@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Data management - Smart Exam Timetable{% endblock %}
+{% block content %}
+<h1>Data management</h1>
+<div class="tabs" role="tablist">
+  {% for key, t in tables.items() %}
+  <a href="{{ url_for('data_management', tab=key) }}" role="tab" {% if key == tab %}aria-selected="true"{% endif %}>{{ t.label }} <span class="count">{{ counts[key] }}</span></a>
+  {% endfor %}
+</div>
+
+<section class="panel">
+  <h2>{{ 'Edit record' if edit_pk else 'Add a record' }}</h2>
+  {% for e in form_errors %}<div class="flash flash-error" role="alert">{{ e }}</div>{% endfor %}
+  <form method="post" action="{{ url_for('data_save', key=tab) }}" class="formgrid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="original_pk" value="{{ edit_pk or '' }}">
+    {% for field, kind in cfg.fields %}
+      <label>{{ labels[field] }}
+        <input name="{{ field }}" type="{{ input_types.get(kind, 'text') }}" value="{{ form_values.get(field, '') }}"
+          {% if kind == 'time' %}step="60"{% endif %}
+          {% if edit_pk and field == cfg.pk %}readonly{% endif %} required>
+      </label>
+    {% endfor %}
+    <div class="formactions">
+      <button class="btn" type="submit">{{ 'Save changes' if edit_pk else 'Add record' }}</button>
+      {% if edit_pk %}<a class="btn btn-ghost" href="{{ url_for('data_management', tab=tab) }}">Cancel</a>{% endif %}
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Upload CSV</h2>
+  <p class="muted">Required header: <code>{% for field, _ in cfg.fields %}{{ field }}{% if not loop.last %},{% endif %}{% endfor %}</code>. Rows with the same ID update existing records; invalid rows are skipped and reported. Maximum 2 MB and 5,000 rows.</p>
+  <form method="post" action="{{ url_for('data_upload', key=tab) }}" enctype="multipart/form-data" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="file" name="csv_file" accept=".csv,text/csv" required>
+    <button class="btn btn-secondary" type="submit">Upload CSV</button>
+    <a href="{{ url_for('csv_template', key=tab) }}">Download template</a>
+  </form>
+</section>
+
+{% if tab == 'students' %}
+<section class="panel">
+  <h2>Create or reset a student login</h2>
+  <p class="muted">Gives an existing student an account so they can view only their own timetable. Passwords are stored hashed.</p>
+  <form method="post" action="{{ url_for('student_login_create') }}" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input name="student_id" placeholder="Student ID, e.g. ST002" required>
+    <input name="password" type="password" placeholder="New password (6+ characters)" minlength="6" required autocomplete="new-password">
+    <button class="btn btn-secondary" type="submit">Save login</button>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>{{ cfg.label }} ({{ total }})</h2>
+    <form method="get" class="inline-form">
+      <input type="hidden" name="tab" value="{{ tab }}">
+      <input name="q" value="{{ q }}" placeholder="Search" aria-label="Search">
+      <button class="btn btn-small" type="submit">Search</button>
+      {% if q %}<a href="{{ url_for('data_management', tab=tab) }}">Clear</a>{% endif %}
+    </form>
+  </div>
+  {% if rows %}
+  <div class="table-wrap"><table>
+    <thead><tr>{% for k, label in cfg.columns %}<th>{{ label }}</th>{% endfor %}<th>Actions</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      {% set pk = r[cfg.pk] %}
+      <tr>{% for k, label in cfg.columns %}<td>{{ r[k] if r[k] is not none else '-' }}</td>{% endfor %}
+        <td class="row-actions">
+          <a class="btn btn-small btn-ghost" href="{{ url_for('data_management', tab=tab, edit=pk, q=q or none, page=page) }}">Edit</a>
+          <form method="post" action="{{ url_for('data_delete', key=tab, pk=pk) }}" data-confirm="Delete this record? Related registrations or timetable entries are removed too.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-small btn-danger" type="submit">Delete</button>
+          </form>
+        </td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% if pages > 1 %}
+  <div class="pager">
+    {% if page > 1 %}<a href="{{ url_for('data_management', tab=tab, q=q or none, page=page-1) }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}<a href="{{ url_for('data_management', tab=tab, q=q or none, page=page+1) }}">Next</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <p class="muted">{{ 'No records match your search.' if q else 'No records yet. Add one above or upload a CSV.' }}</p>
+  {% endif %}
+</section>
+{% endblock %}

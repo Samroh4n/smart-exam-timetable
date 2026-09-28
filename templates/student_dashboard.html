@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}My timetable - Smart Exam Timetable{% endblock %}
+{% block content %}
+{% if not student %}
+<section class="panel narrow"><h1>No student record</h1>
+<p class="error-text">Your account is not linked to a student record. Ask an administrator to fix this.</p></section>
+{% else %}
+<h1>{{ student.student_name }}</h1>
+<p class="muted">Student ID: <strong>{{ student.student_id }}</strong></p>
+<section class="panel">
+  <h2>Registered subjects ({{ subjects|length }})</h2>
+  {% if subjects %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Code</th><th>Subject</th><th>Duration</th></tr></thead>
+    <tbody>{% for s in subjects %}<tr><td>{{ s.subject_code }}</td><td>{{ s.subject_name }}</td><td>{{ s.duration_minutes }} min</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted">You have no registered subjects.</p>{% endif %}
+</section>
+<section class="panel">
+  <h2>My exam timetable</h2>
+  {% if run and rows %}
+  <p class="muted">Based on timetable run #{{ run.run_id }} ({{ run.algorithm_name }}, generated {{ run.generated_at }}).</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>Time</th><th>Code</th><th>Subject</th><th>Slot</th><th>Room</th></tr></thead>
+    <tbody>{% for r in rows %}<tr>
+      <td>{{ r.exam_date or '-' }}</td><td>{% if r.start_time %}{{ r.start_time }}-{{ r.end_time }}{% else %}-{% endif %}</td>
+      <td>{{ r.subject_code }}</td><td>{{ r.subject_name }}</td><td>{{ r.slot_id }}</td><td>{{ r.room_name or 'Not assigned' }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  <p><a class="btn" href="{{ url_for('student_pdf') }}">Download my timetable (PDF)</a></p>
+  {% elif run %}
+  <p class="muted">The current timetable has none of your subjects.</p>
+  {% else %}
+  <p class="muted">Your timetable is not ready yet. It appears here after an administrator generates it.</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

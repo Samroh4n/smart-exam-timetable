@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Conflict graph - Smart Exam Timetable{% endblock %}
+{% block content %}
+<h1>Conflict graph</h1>
+<section class="stats">
+  <div class="stat"><span class="num">{{ info.nodes }}</span> nodes (subjects)</div>
+  <div class="stat"><span class="num">{{ info.edges }}</span> conflict edges</div>
+  <div class="stat"><span class="num">{{ '%.0f'|format(info.density * 100) }}%</span> edge density</div>
+  <div class="stat"><span class="num">{{ info.max_degree }}</span> highest conflict count</div>
+</section>
+<section class="panel">
+  <ul class="legend-list">
+    <li><strong>Node</strong> = a subject (exam)</li>
+    <li><strong>Edge</strong> = at least one student takes both subjects</li>
+    <li><strong>Color</strong> = the exam time slot from the latest timetable{% if latest %} (run #{{ latest.run_id }}, {{ latest.algorithm_name }}){% endif %}</li>
+  </ul>
+  {% if not latest %}<p class="muted">No timetable exists yet, so nodes are grey. Generate one to see slot colors.</p>{% endif %}
+  <div id="graph" data-url="{{ url_for('graph_data') }}" class="graph-box" aria-label="Conflict graph"></div>
+  <div id="graph-legend" class="chips"></div>
+  <p class="muted small">Hover a node or edge for details. Thicker edges mean more shared students.</p>
+</section>
+{% endblock %}
+{% block scripts %}<script>window.addEventListener('DOMContentLoaded', function(){ if (window.renderGraph) renderGraph(document.getElementById('graph')); });</script>{% endblock %}

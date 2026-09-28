@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Validation report - Smart Exam Timetable{% endblock %}
+{% block content %}
+<h1>Validation report</h1>
+{% if not run %}
+<section class="panel"><p class="muted">Generate a timetable first, then validate it here.</p>
+<a class="btn" href="{{ url_for('generate') }}">Generate timetable</a></section>
+{% else %}
+<section class="panel">
+  <label>Timetable run
+    <select onchange="if(this.value) location.href=this.value">
+      {% for r in runs %}<option value="{{ url_for('validation', run_id=r.run_id) }}" {% if r.run_id == run.run_id %}selected{% endif %}>#{{ r.run_id }} - {{ r.algorithm_name }} ({{ r.generated_at }})</option>{% endfor %}
+    </select>
+  </label>
+  <p>Overall result: <span class="badge big {{ 'pass' if report.all_passed else 'fail' }}">{{ 'PASS' if report.all_passed else 'FAIL' }}</span>
+  <span class="muted small">Checked against the current subjects, registrations, rooms and time slots.</span></p>
+</section>
+<section class="panel">
+  {% for c in report.checks %}
+  <div class="check">
+    <div class="check-head"><span class="badge {{ 'pass' if c.passed else 'fail' }}">{{ 'PASS' if c.passed else 'FAIL' }}</span> {{ c.name }}</div>
+    {% if c.details %}<ul>{% for d in c.details %}<li>{{ d }}</li>{% endfor %}{% if c.extra %}<li>...and {{ c.extra }} more.</li>{% endif %}</ul>{% endif %}
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

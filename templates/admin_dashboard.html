@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Smart Exam Timetable{% endblock %}
+{% block content %}
+<h1>Administrator dashboard</h1>
+<section class="stats">
+  <div class="stat"><span class="num">{{ stats.students }}</span> students</div>
+  <div class="stat"><span class="num">{{ stats.subjects }}</span> subjects</div>
+  <div class="stat"><span class="num">{{ stats.rooms }}</span> rooms</div>
+  <div class="stat"><span class="num">{{ stats.slots }}</span> available time slots</div>
+  <div class="stat"><span class="num">{{ stats.edges }}</span> conflict edges</div>
+</section>
+<div class="actions">
+  <a class="btn" href="{{ url_for('generate') }}">Generate timetable</a>
+  <a class="btn btn-secondary" href="{{ url_for('compare', run=1) }}">Compare algorithms</a>
+  <a class="btn btn-ghost" href="{{ url_for('conflict_graph') }}">View conflict graph</a>
+</div>
+<section class="panel">
+  <h2>How graph coloring builds the timetable</h2>
+  <p>Each subject is a <strong>node</strong>. Two subjects are joined by an <strong>edge</strong> when at least one student takes both, because those exams cannot run at the same time. Each <strong>color</strong> is one exam time slot. A valid coloring never gives connected subjects the same color, so no student ever has two exams at once. Fewer colors means fewer slots.</p>
+</section>
+<section class="panel">
+  <h2>Latest timetable</h2>
+  {% if latest %}
+    <p>Run #{{ latest.run_id }} used <strong>{{ latest.algorithm_name }}</strong> with {{ latest.slots_used }} slot(s) in {{ latest.runtime_seconds|runtime }}. Validation: <span class="badge {{ 'pass' if latest.valid else 'fail' }}">{{ 'PASS' if latest.valid else 'FAIL' }}</span>
+    <a href="{{ url_for('timetable', run_id=latest.run_id) }}">Open it</a>.</p>
+  {% else %}
+    <p class="muted">No timetable yet. Choose Generate timetable to create one.</p>
+  {% endif %}
+</section>
+<section class="panel">
+  <h2>Demo data</h2>
+  <p class="muted">Restores the 25 subjects, 300 anonymous students, 8 rooms and 10 slots, and deletes all saved timetables and any changes you made.</p>
+  <form method="post" action="{{ url_for('reset_demo') }}" data-confirm="Reset all data to the demo dataset? Your changes and saved timetables will be lost.">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-danger" type="submit">Reset demo data</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Generate timetable - Smart Exam Timetable{% endblock %}
+{% block content %}
+<h1>Generate timetable</h1>
+<section class="panel narrow-ish">
+  <form method="post" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Algorithm
+      <select name="algorithm">
+        {% for key, (name, _f) in algorithms.items() %}
+        <option value="{{ key }}" {% if key == selected %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Backtracking time limit (seconds)
+      <input type="number" name="time_limit" value="{{ limit }}" min="0.01" max="300" step="any">
+    </label>
+    <p class="muted small">The time limit only applies to Backtracking. If it runs out, the result is reported as timed out and no timetable is saved.</p>
+    <button class="btn" type="submit">Generate timetable</button>
+  </form>
+</section>
+<section class="panel">
+  <h2>Recent runs</h2>
+  {% if runs %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Run</th><th>Algorithm</th><th>Slots used</th><th>Runtime</th><th>Status</th><th>Valid</th><th>Generated</th></tr></thead>
+    <tbody>{% for r in runs %}<tr>
+      <td>{% if r.status == 'completed' %}<a href="{{ url_for('timetable', run_id=r.run_id) }}">#{{ r.run_id }}</a>{% else %}#{{ r.run_id }}{% endif %}</td>
+      <td>{{ r.algorithm_name }}</td><td>{{ r.slots_used if r.slots_used is not none else '-' }}</td>
+      <td>{{ r.runtime_seconds|runtime }}</td>
+      <td>{{ 'Timed out' if r.status == 'timed_out' else 'Completed' }}</td>
+      <td>{% if r.status == 'completed' %}<span class="badge {{ 'pass' if r.valid else 'fail' }}">{{ 'PASS' if r.valid else 'FAIL' }}</span>{% else %}-{% endif %}</td>
+      <td>{{ r.generated_at }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted">No runs yet.</p>{% endif %}
+</section>
+{% endblock %}

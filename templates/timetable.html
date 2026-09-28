@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Timetable - Smart Exam Timetable{% endblock %}
+{% block content %}
+<h1>Exam timetable</h1>
+{% if not run %}
+<section class="panel"><p class="muted">No timetable has been generated yet.</p>
+<a class="btn" href="{{ url_for('generate') }}">Generate timetable</a></section>
+{% else %}
+<section class="panel">
+  <form method="get" class="inline-form" id="run-picker">
+    <label>Timetable run
+      <select onchange="if(this.value) location.href=this.value">
+        {% for r in runs %}<option value="{{ url_for('timetable', run_id=r.run_id) }}" {% if r.run_id == run.run_id %}selected{% endif %}>#{{ r.run_id }} - {{ r.algorithm_name }} ({{ r.generated_at }})</option>{% endfor %}
+      </select>
+    </label>
+  </form>
+  <dl class="meta">
+    <div><dt>Algorithm</dt><dd>{{ run.algorithm_name }}</dd></div>
+    <div><dt>Runtime</dt><dd>{{ run.runtime_seconds|runtime }}</dd></div>
+    <div><dt>Slots used</dt><dd>{{ run.slots_used }}</dd></div>
+    <div><dt>Generated</dt><dd>{{ run.generated_at }}</dd></div>
+    <div><dt>Validation</dt><dd><span class="badge {{ 'pass' if report.all_passed else 'fail' }}">{{ 'PASS' if report.all_passed else 'FAIL' }}</span></dd></div>
+  </dl>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('export_excel', run_id=run.run_id) }}">Export Excel</a>
+    <a class="btn" href="{{ url_for('export_pdf', run_id=run.run_id) }}">Export PDF</a>
+    <a class="btn btn-ghost" href="{{ url_for('validation', run_id=run.run_id) }}">Validation report</a>
+  </div>
+</section>
+<section class="panel">
+  <div class="table-wrap"><table>
+    <thead><tr><th>Code</th><th>Subject</th><th>Students</th><th>Date</th><th>Time</th><th>Slot</th><th>Room</th><th>Room capacity</th><th>Color</th><th>Algorithm</th></tr></thead>
+    <tbody>{% for r in rows %}<tr>
+      <td>{{ r.subject_code }}</td><td>{{ r.subject_name }}</td><td>{{ r.enrollment_count }}</td>
+      <td>{{ r.exam_date or 'Missing' }}</td><td>{% if r.start_time %}{{ r.start_time }}-{{ r.end_time }}{% else %}-{% endif %}</td>
+      <td>{{ r.slot_id }}</td><td>{{ r.room_name or 'Unassigned' }}</td><td>{{ r.capacity if r.capacity is not none else '-' }}</td>
+      <td><span class="dot c{{ r.assigned_color % 12 }}"></span>{{ r.assigned_color }}</td><td>{{ run.algorithm_name }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endif %}
+{% endblock %}

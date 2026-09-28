@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Algorithm comparison - Smart Exam Timetable{% endblock %}
+{% block content %}
+<h1>Algorithm comparison</h1>
+<section class="panel">
+  <p>All five algorithms run on the exact same current conflict graph. Every number below is calculated live.</p>
+  <form method="post" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Backtracking time limit (seconds)
+      <input type="number" name="time_limit" value="{{ limit }}" min="0.01" max="300" step="any">
+    </label>
+    <button class="btn" type="submit">Run comparison</button>
+  </form>
+</section>
+{% if rows %}
+<section class="panel">
+  <h2>Results</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Algorithm</th><th>Slots Used</th><th>Runtime</th><th>Valid</th><th>Status</th></tr></thead>
+    <tbody>{% for r in rows %}<tr>
+      <td>{{ r.name }}</td>
+      <td>{% if r.status == 'timed_out' %}Timed out{% else %}{{ r.slots_used }}{% endif %}</td>
+      <td>{{ r.runtime|runtime }}</td>
+      <td>{% if r.status == 'timed_out' %}-{% else %}<span class="badge {{ 'pass' if r.valid else 'fail' }}">{{ 'Yes' if r.valid else 'No' }}</span>{% endif %}</td>
+      <td>{{ 'Timed out' if r.status == 'timed_out' else 'Completed' }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% set over = rows|selectattr('slots_used')|selectattr('slots_used', 'gt', n_slots)|list %}
+  {% if over %}<p class="flash flash-warning">Only {{ n_slots }} time slot(s) exist. {{ over|map(attribute='name')|join(', ') }} used more, so they could not be turned into a timetable without adding slots.</p>{% endif %}
+</section>
+<section class="charts">
+  <div class="panel"><h2>Time slots used</h2><canvas id="chart-slots" height="220"></canvas></div>
+  <div class="panel"><h2>Runtime (milliseconds)</h2><canvas id="chart-runtime" height="220"></canvas></div>
+</section>
+<script id="compare-data" type="application/json">{{ rows|tojson }}</script>
+<section class="panel">
+  <h2>Recommended algorithm</h2>
+  {% if rec %}
+    <p class="reco"><strong>{{ rec.name }}</strong></p>
+    <p>{{ rec.explanation }}</p>
+  {% else %}
+    <p>No recommendation: none of the algorithms produced a valid, completed result.</p>
+  {% endif %}
+  <p>For a dataset of 25 subjects and 300 students, DSATUR is generally the best practical choice because it usually balances fewer slots with fast runtime. The recommendation above comes from the current results, not from that general rule.</p>
+  <p>Backtracking may find an optimal result on small graphs, but it can become slow on larger or denser graphs, which is why it has a time limit.</p>
+</section>
+{% else %}
+<section class="panel"><p class="muted">Choose Run comparison to calculate results.</p></section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if rows %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>window.addEventListener('DOMContentLoaded', function(){ if (window.renderCompareCharts) renderCompareCharts(); });</script>
+{% endif %}
+{% endblock %}
